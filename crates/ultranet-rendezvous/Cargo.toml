@@ -1,0 +1,24 @@
+[package]
+name = "ultranet-rendezvous"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+description = "Ultranet L3 — rendezvous by key, over onion circuits."
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0"
+arti-client = { version = "0.30.0", features = ["tokio", "rustls", "onion-service-client", "onion-service-service"] }
+futures = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-util"] }
+tor-cell = "0.30.0"
+tor-hsrproxy = "0.30.0"
+tor-hsservice = "0.30.0"
+tor-rtcompat = { version = "0.30.0", features = ["tokio", "rustls"] }
+ultranet-core = { path = "../ultranet-core" }
+ultranet-transport = { path = "../ultranet-transport" }

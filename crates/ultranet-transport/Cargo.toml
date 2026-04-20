@@ -1,0 +1,21 @@
+[package]
+name = "ultranet-transport"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+description = "Ultranet L2 — anonymous transport over onion-routed circuits."
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0.102"
+arti-client = { version = "0.30.0", features = ["tokio", "rustls", "onion-service-client", "onion-service-service"] }
+tempfile = "3"
+tokio = { version = "1.52.1", features = ["rt-multi-thread", "macros"] }
+tor-config-path = "0.30.0"
+tor-rtcompat = { version = "0.30.0", features = ["tokio", "rustls"] }
+ultranet-core = { path = "../ultranet-core" }
