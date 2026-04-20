@@ -2,7 +2,9 @@
 resolver = "2"
 members = [
     "crates/ultranet-core",
+    "crates/ultranet-crypto",
     "crates/ultranet-node",
+    "crates/ultranet-radio",
     "crates/ultranet-rendezvous",
     "crates/ultranet-transport",
 ]

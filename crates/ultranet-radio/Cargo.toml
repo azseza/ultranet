@@ -1,0 +1,23 @@
+[package]
+name = "ultranet-radio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+description = "Ultranet L5 — one-to-many anonymous radio broadcast."
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0"
+arti-client = { version = "0.30.0", features = ["tokio", "rustls"] }
+cpal = "0.15"
+opus = "0.3"
+ringbuf = "0.4"
+symphonia = { version = "0.5", features = ["mp3", "flac", "vorbis", "ogg", "wav", "aac", "isomp4"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-util", "sync", "time", "fs"] }
+ultranet-core = { path = "../ultranet-core" }
+ultranet-rendezvous = { path = "../ultranet-rendezvous" }

@@ -19,5 +19,7 @@ path = "src/main.rs"
 anyhow = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-util", "time"] }
 ultranet-core = { path = "../ultranet-core" }
+ultranet-crypto = { path = "../ultranet-crypto" }
+ultranet-radio = { path = "../ultranet-radio" }
 ultranet-rendezvous = { path = "../ultranet-rendezvous" }
 ultranet-transport = { path = "../ultranet-transport" }
