@@ -1,6 +1,6 @@
 # Ultranet Design System
 
-**Status:** Draft v0.1 — 2026-04-20.
+**Status:** Draft v0.2 — 2026-04-30.
 **Purpose:** The architectural "laws of physics" of Ultranet. Every module, every PR, every new subsystem is checked against this document. If a design decision conflicts with an invariant here, one of them is wrong, and the burden of proof is on the design.
 
 This is not a style guide. It is not about UI. The "design system" here is the *architectural* design system — the set of invariants, layer boundaries, and cross-cutting rules that make Ultranet coherent across time and contributors.
@@ -27,44 +27,68 @@ We do not solve trust by adding more trusted parties. We solve it by removing th
 If an adversary physically seizes a node, removes its storage, and decaps its chips, they should learn: that the node participated in Ultranet, and nothing else. Not who its peers were. Not what computations ran on it. Not what user identities it served.
 
 ### A6. Honesty about the unsolved
-Where the state of the art cannot defend against an adversary class, we say so in the threat model, we do not paper over it, and we do not market the system as defending against it. Global passive adversary traffic correlation is the canonical example.
+Where the state of the art cannot defend against an adversary class, we say so in the threat model, we do not paper over it, and we do not market the system as defending against it. Global passive adversary traffic correlation is the canonical example. The unsolved list is treated as a research portfolio, not a disclaimer (see threat model §6).
+
+### A7. Substrate independence
+Ultranet is decoupled from any specific physical-layer carrier. TCP/IP today, FSO mesh tomorrow, ham-radio digital modes or store-and-forward sneakernet under suppression. L1 is *replaceable*, not merely *abstractable*: the design admits substrate swaps without re-architecture above L2. This is the structural meaning of "sovereign topology."
 
 ---
 
 ## 2. Layer architecture
 
-Ultranet has exactly five layers. Every component belongs to exactly one.
+Ultranet has five layers, with two of them — L4 and L5 — sub-structured by role.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  L5 — Application                                       │
-│  Messaging, file drop, compute marketplace UI, etc.     │
-├─────────────────────────────────────────────────────────┤
-│  L4 — Service                                           │
-│  Blind-compute execution, relay policies, key agreement │
-├─────────────────────────────────────────────────────────┤
-│  L3 — Rendezvous & naming                               │
-│  Hidden-service descriptors, DHT, capability discovery  │
-├─────────────────────────────────────────────────────────┤
-│  L2 — Anonymous transport                               │
-│  Onion circuits (Arti), stream multiplexing             │
-├─────────────────────────────────────────────────────────┤
-│  L1 — Substrate                                         │
-│  Whatever carries bits: TCP/IP today, FSO mesh later    │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  L5 — Application                                                │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │ L5-runtime — the verified hyperdocument console (browser)  │  │
+│  │ Identity manager, attestation chrome, session journal      │  │
+│  ├────────────────────────────────────────────────────────────┤  │
+│  │ L5-app — messaging, file drop, radio, intake, archive UI   │  │
+│  └────────────────────────────────────────────────────────────┘  │
+├──────────────────────────────────────────────────────────────────┤
+│  L4 — Service                                                    │
+│  ┌──────────────┬──────────────┬─────────────────────────────┐   │
+│  │ L4-compute   │ L4-state     │ L4-relay                    │   │
+│  │ attested     │ encrypted    │ forwarding policy,          │   │
+│  │ ephemeral    │ persistent,  │ cover-traffic shaping,      │   │
+│  │ enclaves     │ replicated   │ optional mix layer          │   │
+│  └──────────────┴──────────────┴─────────────────────────────┘   │
+├──────────────────────────────────────────────────────────────────┤
+│  L3 — Rendezvous & naming                                        │
+│  Signed peer descriptors with typed capabilities, DHT-over-L2    │
+├──────────────────────────────────────────────────────────────────┤
+│  L2 — Anonymous transport                                        │
+│  Onion circuits (Arti), stream multiplexing                      │
+├──────────────────────────────────────────────────────────────────┤
+│  L1 — Substrate                                                  │
+│  Replaceable carrier: TCP/IP today, FSO / radio / sneakernet     │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### Layer invariants
 
-**L1 (Substrate).** Assumed-hostile. Every bit leaving L2 into L1 is encrypted, padded, and indistinguishable from noise. L1 is replaceable: TCP/IP is the current substrate; FSO mesh is the long-term target. Nothing above L1 may assume properties of the substrate beyond "delivers bytes, sometimes."
+**L1 (Substrate).** Assumed-hostile. Every bit leaving L2 into L1 is encrypted, padded, and indistinguishable from noise. L1 is *replaceable* by design (axiom A7): TCP/IP is the current substrate; substrate swaps must not require changes above L2. Nothing above L1 may assume properties of the substrate beyond "delivers bytes, sometimes."
 
 **L2 (Anonymous transport).** Single responsibility: build circuits that unlink source from destination. Built on Arti. No application-layer logic lives here. No naming. No service discovery. Circuits in, circuits out.
 
-**L3 (Rendezvous & naming).** How peers find each other without a central directory. Hidden-service-style descriptors signed by the owning peer, published to a DHT that itself runs over L2. The only globally-visible name for a peer is its public key.
+**L3 (Rendezvous & naming).** How peers find each other without a central directory. Hidden-service-style descriptors signed by the owning peer, published to a DHT that itself runs over L2. Descriptors carry **typed capabilities** — `compute`, `state`, `relay`, `intake`, `feed` — so a peer can advertise *what it offers* and a dialer can resolve *what it needs* without leaking the choice to the substrate. The only globally-visible name for a peer is its public key.
 
-**L4 (Service).** Where trustless compute lives. A node that has published a compute capability at L3 accepts workloads here, executes them in a hardware-attested enclave, and returns results. Relay policies, egress gateways, and key-agreement protocols also live at L4.
+**L4 (Service).** Stateful and stateless services exposed over L3, sub-structured by lifetime and trust model:
 
-**L5 (Application).** Everything users touch. Messaging apps, file drops, the compute marketplace, admin UIs. Applications may never reach below L4. An application that opens a raw socket has violated the design system.
+- **L4-compute.** Ephemeral, hardware-attested enclaves (SEV-SNP). Workload in, attested result out, no persistence visible to the operator. Headline use case: anonymous LLM inference (M5).
+- **L4-state.** Persistent, encrypted-at-rest, replication-aware. The operator stores ciphertext and metadata they cannot interpret. Use cases: P3's archive, P4's audit log, KV cache durability across volunteer churn.
+- **L4-relay.** Pure forwarding and shaping. Cover-traffic generators (I7), policy-bound relays, and — if/when adopted — an opt-in mixnet hop for message-class traffic. Holds no payload state across requests.
+
+A single binary may implement more than one of these roles, but the roles are conceptually distinct, advertised separately at L3, and tested against separate threat models.
+
+**L5 (Application).** Everything users touch, sub-structured into:
+
+- **L5-runtime — the verified hyperdocument console.** The single user-facing surface through which all L5-apps are addressed, all L4 services are dispatched, and all attestation chrome is rendered. Identity management, plural-persona enforcement, session journaling, and the `caps://` resolver live here. See `06-browser.md`.
+- **L5-app.** Specific workflows: messaging, file drop, radio, intake forms, archive UIs, compute marketplace UI. Apps run *inside* the L5-runtime sandbox; they never reach the substrate, never see raw network sockets, and access L4 only through capabilities the runtime hands them.
+
+Applications may never reach below L4. An L5-app that opens a raw socket has violated the design system. An L5-app that bypasses the runtime to reach L4 directly has violated the design system.
 
 ### Cross-layer rules
 
@@ -124,8 +148,10 @@ Things the design system does *not* yet answer. Each one is a future design doc.
 - **Software updates without phoning home.** How does a node learn that a new signed release exists, and fetch it, without establishing a fingerprintable relationship with an update server?
 - **Bootstrapping from zero peers.** A fresh install needs at least one peer to talk to. How is that first peer introduced, and how is that channel itself protected?
 - **Key rotation and recovery.** What does it mean to "lose your keys" on a system that has no account recovery by design? How much of the answer is tooling, how much is user education?
+- **Plural identity and selective disclosure.** P1, P3, P4 all need multiple personas (work vs. personal, source-handler vs. outlet-facing) that cannot be linked by an observer or by a colluding peer. What primitives — anonymous credentials, BBS+, hierarchical pseudonyms — does the L5-runtime expose, and how are they enforced? Future doc: `08-identity.md`.
 - **Abuse and moderation.** A trustless compute marketplace without moderation will attract workloads nobody wants to run. What is the minimum viable abuse story that does not compromise the invariants above?
 - **Sybil resistance at L3.** BFT gossip among bootstrap nodes works until it doesn't. What is the long-term Sybil story, and how close is it to requiring a token (which we are committed not to ship)?
+- **Sustainability without a token.** Volunteer ideology runs out around a few hundred nodes. What is the funding and operator-incentive model that does not become a token? Future doc: `09-economics.md`.
 
 ---
 

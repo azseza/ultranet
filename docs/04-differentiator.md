@@ -1,8 +1,14 @@
 # Differentiator
 
-**Status:** Draft v0.1 — 2026-04-20.
+**Status:** Draft v0.2 — 2026-04-30.
 
 ---
+
+## The one-sentence version
+
+**Ultranet is what comes after the cloud era, for people whose work cannot be cloud-shaped.**
+
+The cloud's economics — borrow someone else's hardware, pay only for what you use — are correct. The cloud's *price* — surrender the substance of the work to the provider, and the metadata of the work to the public internet — is unaffordable for the personas in `03-personas.md`. Ultranet keeps the economics and removes the price.
 
 ## The one-paragraph version
 

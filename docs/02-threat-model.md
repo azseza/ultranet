@@ -1,6 +1,6 @@
 # Threat Model
 
-**Status:** Draft v0.1 — 2026-04-20.
+**Status:** Draft v0.2 — 2026-04-30.
 **Purpose:** Name the adversaries Ultranet is built to defeat, map each adversary class to the specific defenses that address it, and honestly mark the attacks we do not yet defend against. This document is checked against the design system (`05-design-system.md`) whenever either one changes.
 
 **Honesty rule.** If an attack has no mapped defense, it is listed as *unsolved* — not *out of scope*. "Out of scope" is a phrase used in this document only for attacks that the project is deliberately not in the business of stopping (e.g., a user voluntarily disclosing their own identity).
@@ -162,14 +162,40 @@ These are not threats we intend to solve. Listed here so that contributors do no
 
 ---
 
-## 6. Summary of unsolved
+## 6. The unsolved research portfolio
 
-For quick reference, the attacks we do not currently defend against and are honest about:
+This section is not a disclaimer. It is the list of *open research problems Ultranet treats as part of its mandate*. Each item below is an attack we cannot currently defend against, and a track of work that — when it produces a defense — moves the item up into §4. Honesty about the unsolved (axiom A6) means more than admitting the gaps; it means owning the research that closes them.
 
-1. **Global passive adversary traffic correlation for interactive traffic.** Partial mitigation only. Full defense requires mixnet-class latency and is opt-in.
-2. **Sustained global active suppression of Ultranet traffic.** Traffic-indistinguishability raises the cost; availability under determined state-level suppression is not guaranteed.
-3. **Sybil-resistance without a token economy.** BFT gossip is a mitigation, not a solution.
-4. **Endpoint compromise.** Out of scope for the protocol; partially addressed by Track 2 hardware.
-5. **Coordinated supply-chain compromise above the threshold of maintainer signatures.** Governance and transparency mitigations only.
+### 6.1 Global passive adversary traffic correlation (interactive traffic)
+**State of the art.** Tor, I2P, Veilid all share this gap. Mixnet-class systems (Nym, Loopix) close it at a latency cost that rules out interactive workflows.
+**Ultranet partial defense.** Constant-rate cover traffic (I7) raises the cost; an opt-in mix layer at L4-relay is on the roadmap for message-class traffic.
+**Open questions we own.** Can a per-circuit traffic-shaping policy at L4-relay defeat correlation for short-burst interactive traffic without paying full mixnet latency? What is the latency/anonymity-set Pareto frontier for the persona set in `03-personas.md`?
 
-These are the places where Ultranet is honest about what it does not yet do. Future versions of this document will move items from §6 into §4 as defenses mature — or explicitly concede that the attack will remain unsolved, which is also acceptable as long as we are clear about it.
+### 6.2 Sustained global active suppression
+**State of the art.** No deployed network survives a sufficiently resourced state-level suppression campaign at the IP layer. Tor's bridge ecosystem partially mitigates censorship but not bandwidth-class active interference.
+**Ultranet partial defense.** Wire indistinguishability (I6) raises the collateral cost of blocking. Substrate replaceability (A7) provides a structural escape: when the public internet is hostile, Ultranet can move to FSO mesh, ham-radio digital modes, or sneakernet with no architectural change above L2.
+**Open questions we own.** What is the operational hand-off between substrates — automatic, manual, or graceful-degradation? How does the L5-runtime represent "we are now operating on a degraded substrate" to users without breaking I6?
+
+### 6.3 Sybil resistance without a token economy
+**State of the art.** Every production overlay either tolerates Sybil (Tor) or token-gates participation (Nym, Session). No deployed system has solved this without economic stakes.
+**Ultranet partial defense.** BFT gossip among bootstrap peers limits any single operator's influence. L3 descriptor schema can carry capability *types* but not *reputation*.
+**Open questions we own.** Can social-graph-bound credentials (web-of-trust signatures from existing peers) provide Sybil resistance for sensitive capabilities (intake, archive replication) without becoming a deanonymization vector? Is there a viable "proof of legitimate participation" that is not a token?
+
+### 6.4 Endpoint compromise
+**State of the art.** Pegasus-class implants defeat any application-layer privacy measure. Track 2 (sealed appliances) is the structural answer.
+**Ultranet partial defense.** No-ambient-authority (I1), capability-language sandboxing in L5-runtime, layer isolation prevents L5-app compromise from reaching L4.
+**Open questions we own.** What is the minimal Track 2 hardware specification that meaningfully resists T11? Can the L5-runtime detect tampering with the host OS (e.g., via TPM measured boot) and fail closed (I6)?
+
+### 6.5 Coordinated supply-chain compromise
+**State of the art.** SolarWinds, xz, event-stream — supply-chain attacks above maintainer thresholds are an unsolved class for the entire software industry.
+**Ultranet partial defense.** Reproducible builds (I5), multi-party release signing, dependency vetting.
+**Open questions we own.** What is the threshold? How is the threshold *publicly verifiable* by users without a central trust anchor? Is there a tractable "diverse-double-compilation" workflow for an `arti`-sized dependency graph?
+
+### 6.6 Plural identity unlinkability across colluding peers
+**State of the art.** Anonymous credentials (BBS+, IRMA, recent BBS-23) provide selective disclosure but lack ergonomics for end users.
+**Ultranet partial defense.** None yet — plural identity is a vision-doc commitment, not an implemented primitive.
+**Open questions we own.** How does the L5-runtime expose persona-switching such that a user cannot accidentally cross-link two personas? Can the threat model rule out *all* observer-side correlation, or only most?
+
+---
+
+These are not "things we don't do." They are the project's research surface. When an item closes, it moves into §4 with the defense documented. When an item proves intractable, we say so explicitly and revise the manifesto's claims accordingly.
